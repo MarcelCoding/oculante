@@ -76,6 +76,7 @@ pub const SUPPORTED_EXTENSIONS: &[&str] = &[
     "heif",
     #[cfg(feature = "heif")]
     "heic",
+    "cr3",
 ];
 
 fn is_pixel_fully_transparent(p: &Rgba<u8>) -> bool {
@@ -402,8 +403,8 @@ pub fn send_image_threaded(
                 }
             }
             Err(e) => {
-                error!("{e}");
-                _ = message_sender.send(Message::LoadError(format!("{e}")));
+                error!("{e:?}");
+                _ = message_sender.send(Message::LoadError(format!("{e:?}")));
                 _ = message_sender.send(Message::LoadError(format!(
                     "Failed to load {}",
                     path.display()

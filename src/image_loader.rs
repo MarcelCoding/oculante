@@ -1,6 +1,7 @@
 use crate::ktx2_loader::CompressedImageFormats;
 use crate::utils::{fit, Frame, FrameSource};
 use crate::{ktx2_loader, Message, FONT};
+use libopenraw::{rawfile_from_file, Bitmap, RenderingOptions, Type};
 use log::{debug, error, info};
 use psd::Psd;
 
@@ -812,6 +813,26 @@ pub fn open_image(
                 }
             },
         },
+        "cr3" => {
+            info!("loading {}", img_location.to_string_lossy());
+            let rawfile = rawfile_from_file(&img_location, Some(Type::Cr3))?;
+
+            // Default options are Colour stage + SRgb.
+            let options = RenderingOptions::default();
+            let rawdata = rawfile.raw_data(false).unwrap();
+            let rendered_image = rawdata.rendered_image(options).unwrap();
+            let data8 = rendered_image.data8().unwrap().to_vec();
+            /*                let scale = u8::MAX as f64 / u16::MAX as f64;
+            let data8 = data16
+                .iter()
+                .map(|v| (*v as f64 * scale) as u8)
+                .collect::<Vec<u8>>();*/
+            let rgba_image =
+                RgbaImage::from_raw(rendered_image.width(), rendered_image.height(), data8)
+                    .unwrap();
+            _ = sender.send(Frame::new_still(rgba_image));
+            return Ok(receiver);
+        }
         _ => {
             // All other supported image files are handled by using `image`
             debug!("Loading using generic image library");
